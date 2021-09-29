@@ -31,7 +31,7 @@ readonly veth99_v4=172.19.0.2
 
 ip -Version > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-	echo "Could not run test without ip command"
+	echo "   Could not run test without ip command"
 	exit 1
 fi
 
@@ -77,12 +77,25 @@ setup_ns_and_nic() {
 }
 
 # clean created network namespace, has bug in there?
-cleanup_env() {
+cleanup_netns() {
 	for i in 0 1
 	do
-	  echo "Delete network namepspace '$i' ok"
+	  echo "   Delete network namepspace '$i' ok"
 		ip netns del ns$i > /dev/null 2>&1
 	done
+}
+
+cleanup_firewall() {
+    # flush forward rules.
+    iptables -P FORWARD DROP
+    iptables -F FORWARD
+    # flush nat table
+    iptables -t nat -F
+}
+
+cleanup_env() {
+  cleanup_firewall
+  cleanup_netns
 }
 
 # check
@@ -100,19 +113,13 @@ setup_route() {
 }
 
 setup_iptables() {
-  # flush forward rules.
-  iptables -P FORWARD DROP
-  iptables -F FORWARD
-  # flush nat table
-  iptables -t nat -F
-  # create masq rule
+  cleanup_firewall
+  # create MASQUERADE rule
   iptables -t nat -A POSTROUTING -s ${veth04_v4}/24 -o ${host_inf} -j MASQUERADE
-
   # add forward for veth04 and host interface
   iptables -A FORWARD -i ${host_inf} -o veth99 -j ACCEPT
   iptables -A FORWARD -o ${host_inf} -i veth99 -j ACCEPT
-
-  echo "   Setup iptables for masq over. "
+  echo "   Setup iptables for MASQUERADE over. "
 }
 
 run_tests() {
