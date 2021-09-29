@@ -18,7 +18,7 @@
 #--------------------------------------------------------------+
 # ns0 : can access lan and namespace network
 # ns1 : only  allow access namespace network
-
+# PS: this Danger for product env.
 
 # ns1 veth ip
 readonly veth10_v4=10.128.0.2
